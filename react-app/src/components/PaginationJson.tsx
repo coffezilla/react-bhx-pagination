@@ -8,7 +8,8 @@ interface IProps {
 	currentPage?: number; // current page
 	perPage?: number; // number of results per page
 	autoLoad?: boolean; // scroll to the bottom to load next page
-	getAll?: boolean; // get all the results with one call
+	saveLocalJson?: boolean; // get all the results with one call
+	pathData?: string; // field of the object ( data.pathData, data.users, data.xxx)
 	onChange?: Function; // callback function after successfully change the page
 }
 
@@ -23,7 +24,7 @@ interface IRef {
 
 type serverData = {
 	status: number;
-	users: any[];
+	dataRawArr: any[];
 	totalResults: number;
 };
 
@@ -34,7 +35,8 @@ const Pagination = ({
 	perPage = 10,
 	onChange,
 	autoLoad = false,
-	getAll = true,
+	saveLocalJson = true,
+	pathData = undefined,
 }: IProps) => {
 	const refContentScroll: React.MutableRefObject<IRef> = useRef({
 		allContent: 0,
@@ -45,7 +47,7 @@ const Pagination = ({
 		dataTemp: [],
 	});
 
-	const GET_ALL_SERVER = true;
+	// save local json for server call
 	const [localData, setLocalData] = useState<any[]>([]);
 
 	// check if is a endpoint or object
@@ -54,7 +56,7 @@ const Pagination = ({
 	let pagesList: any[] = [];
 	let totalResults: number = 0;
 	const dataRetrieveFrom =
-		typeof data === 'object' ? 'LOCAL' : GET_ALL_SERVER ? 'SERVER_LOCAL' : 'SERVER';
+		typeof data === 'object' ? 'LOCAL' : saveLocalJson ? 'SERVER_LOCAL' : 'SERVER';
 
 	const scrolling = () => {
 		let windowCurrentPosition = 0;
@@ -68,85 +70,95 @@ const Pagination = ({
 			const nextPage = refContentScroll.current.page + 1;
 			if (nextPage < refContentScroll.current.pages.length + 1) {
 				getResultPage(nextPage);
+				console.log('get result', nextPage);
 			} else {
 				document.removeEventListener('scroll', scrolling, false);
 			}
 		}
 	};
 
+	// get data from local json
+	const getDataFromJson = (json: any[], page: number = 1, perPage: number = 3): any => {
+		dataJson = json;
+		setLocalData(dataJson);
+
+		const totalResults = dataJson.length;
+		const indexCurrent = page * perPage - perPage;
+		const indexCurrentFirst = indexCurrent;
+		const indexLastResult = indexCurrent + perPage;
+		const indexLast = indexLastResult > totalResults ? totalResults : indexLastResult;
+
+		const serverResponse = {
+			status: 1,
+			dataRawArr: dataJson.slice(indexCurrentFirst, indexLast),
+			totalResults: totalResults,
+		};
+		return serverResponse;
+	};
+
 	// get Json from or rest from the endpoint from the server
-	const getServerUsers = async (page: number): Promise<serverData> => {
+	const getFullJsonResults = async (page: number): Promise<serverData> => {
 		let serverResponse: serverData = {
 			status: 0,
-			users: [],
+			dataRawArr: [],
 			totalResults: 0,
 		};
 
-		//check
-
+		// getting data from server each page
 		if (dataRetrieveFrom === 'SERVER') {
 			await axios({
 				url: `${data}?page=${page}&perpage=${perPage}`,
 				method: 'get',
 			})
 				.then((responseData) => {
-					dataJson = responseData.data.users;
-					totalResults = responseData.data.results;
+					dataJson = pathData ? responseData.data[pathData] : responseData.data;
+					totalResults = responseData.data.totalRows;
 					serverResponse = {
 						status: 1,
-						users: responseData.data.users,
-						totalResults: responseData.data.results,
+						dataRawArr: pathData ? responseData.data[pathData] : responseData.data,
+						totalResults: responseData.data.totalRows,
 					};
 				})
 				.catch((errorData) => {
 					console.log('ENDPOINT NOT FOUND');
 				});
 		}
+
+		// gettin data from server only the first time
 		if (dataRetrieveFrom === 'SERVER_LOCAL') {
-			await axios({
-				url: `${data}?page=${page}&perpage=${100}`,
-				method: 'get',
-			})
-				.then((responseData) => {
-					dataJson = responseData.data.users;
-					totalResults = responseData.data.results;
-					serverResponse = {
-						status: 1,
-						users: responseData.data.users,
-						totalResults: responseData.data.results,
-					};
+			if (localData.length === 0) {
+				await axios({
+					url: `${data}`,
+					method: 'get',
 				})
-				.catch((errorData) => {
-					console.log('ENDPOINT NOT FOUND');
-				});
+					.then((responseData) => {
+						dataJson = pathData ? responseData.data[pathData] : responseData.data;
+						serverResponse = getDataFromJson(dataJson, page, perPage);
+					})
+					.catch((errorData) => {
+						console.log('ENDPOINT NOT FOUND');
+					});
+			} else {
+				serverResponse = getDataFromJson(localData, page, perPage);
+			}
 		}
+
+		// all data is paged from the passed json
 		if (dataRetrieveFrom === 'LOCAL') {
 			if (typeof data === 'object') {
 				dataJson = data;
 			}
-
-			const totalResults = dataJson.length;
-			const indexCurrent = page * perPage - perPage;
-			const indexCurrentFirst = indexCurrent;
-			const indexLastResult = indexCurrent + perPage;
-			const indexLast = indexLastResult > totalResults ? totalResults : indexLastResult;
-
-			serverResponse = {
-				status: 1,
-				users: dataJson.slice(indexCurrentFirst, indexLast),
-				totalResults: totalResults,
-			};
+			serverResponse = getDataFromJson(dataJson, page, perPage);
 		}
 
 		return serverResponse;
 	};
 
 	const getResultPage = (page: number = currentPage) => {
-		getServerUsers(page).then((responseServerUser) => {
-			if (responseServerUser.status === 1) {
-				// console.log('getServerUsers', responseServerUser);
-				newContent = responseServerUser.users;
-				totalResults = responseServerUser.totalResults;
+		getFullJsonResults(page).then((responseServerJson) => {
+			if (responseServerJson.status === 1) {
+				newContent = responseServerJson.dataRawArr;
+				totalResults = responseServerJson.totalResults;
 
 				// creating pages array
 				const totalPages = Math.ceil(totalResults / perPage);
@@ -223,7 +235,7 @@ const Pagination = ({
 	return (
 		<>
 			{/* <pre>{JSON.stringify(refContentScroll, null, 1)}</pre> */}
-			<pre>{JSON.stringify(localData, null, 1)}</pre>
+			{/* <pre>{JSON.stringify(localData, null, 1)}</pre> */}
 			{autoLoad ? (
 				<>
 					<p>Scroll to nextpage</p>
