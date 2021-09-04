@@ -1,5 +1,5 @@
 /* eslint-disable */
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import axios from 'axios';
 
 interface IProps {
@@ -26,6 +26,10 @@ type serverData = {
 	status: number;
 	dataRawArr: any[];
 	totalResults: number;
+};
+
+const Rogue = () => {
+	console.log('yx');
 };
 
 const Pagination = ({
@@ -60,7 +64,7 @@ const Pagination = ({
 	const dataRetrieveFrom =
 		typeof data === 'object' ? 'LOCAL' : saveLocalJson ? 'SERVER_LOCAL' : 'SERVER';
 
-	const scrolling = () => {
+	const scrolling = useCallback(() => {
 		// only load more results if is not loading prev data
 		if (!isLoadingServerScroll) {
 			let windowCurrentPosition = 0;
@@ -76,11 +80,13 @@ const Pagination = ({
 					getResultPage(nextPage);
 					console.log('get result', nextPage);
 				} else {
+					console.log('removeEventListener');
 					document.removeEventListener('scroll', scrolling, false);
+					// document.removeEventListener('scroll', Rogue, false);
 				}
 			}
 		}
-	};
+	}, []);
 
 	// get data from local json
 	const getDataFromJson = (json: any[], page: number = 1, perPage: number = 3): any => {
@@ -219,8 +225,8 @@ const Pagination = ({
 	};
 
 	useEffect(() => {
-		const contentScrollBox: Element | null = document.querySelector('.check-scroll');
-		if (autoLoad) {
+		const contentScrollBox: Element | null = document.querySelector('.list-box-local');
+		if (autoLoad && contentScrollBox !== null) {
 			if (contentScrollBox instanceof HTMLElement) {
 				// create an Observer instance
 				const resizeObserver = new ResizeObserver(() => {
@@ -232,8 +238,14 @@ const Pagination = ({
 				});
 				// start observing a DOM node
 				resizeObserver.observe(document.body);
+				console.log('addEventListener');
 				document.addEventListener('scroll', scrolling, false);
+				// document.addEventListener('scroll', Rogue, false);
 			}
+		} else {
+			console.log('removeEventListener');
+			document.removeEventListener('scroll', scrolling, false);
+			// document.removeEventListener('scroll', Rogue, false);
 		}
 
 		getResultPage();
@@ -241,7 +253,7 @@ const Pagination = ({
 
 	return (
 		<>
-			{/* <pre>{JSON.stringify(refContentScroll, null, 1)}</pre> */}
+			<pre>{JSON.stringify(refContentScroll, null, 1)}</pre>
 			{/* <pre>{JSON.stringify(localData, null, 1)}</pre> */}
 			{autoLoad ? (
 				<>
