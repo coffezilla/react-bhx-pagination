@@ -49,30 +49,35 @@ const Pagination = ({
 
 	// save local json for server call
 	const [localData, setLocalData] = useState<any[]>([]);
+	// const [isLoadingServerScroll, setIsLoadingServerScroll] = useState<boolean>(false);
 
 	// check if is a endpoint or object
 	let dataJson: any[] = [];
 	let newContent: any[] = [];
 	let pagesList: any[] = [];
 	let totalResults: number = 0;
+	let isLoadingServerScroll = false;
 	const dataRetrieveFrom =
 		typeof data === 'object' ? 'LOCAL' : saveLocalJson ? 'SERVER_LOCAL' : 'SERVER';
 
 	const scrolling = () => {
-		let windowCurrentPosition = 0;
-		if (window !== undefined) {
-			windowCurrentPosition = window.pageYOffset;
-		}
-		if (
-			refContentScroll.current.viewport + windowCurrentPosition >
-			refContentScroll.current.allContent
-		) {
-			const nextPage = refContentScroll.current.page + 1;
-			if (nextPage < refContentScroll.current.pages.length + 1) {
-				getResultPage(nextPage);
-				console.log('get result', nextPage);
-			} else {
-				document.removeEventListener('scroll', scrolling, false);
+		// only load more results if is not loading prev data
+		if (!isLoadingServerScroll) {
+			let windowCurrentPosition = 0;
+			if (window !== undefined) {
+				windowCurrentPosition = window.pageYOffset;
+			}
+			if (
+				refContentScroll.current.viewport + windowCurrentPosition >
+				refContentScroll.current.allContent
+			) {
+				const nextPage = refContentScroll.current.page + 1;
+				if (nextPage < refContentScroll.current.pages.length + 1) {
+					getResultPage(nextPage);
+					console.log('get result', nextPage);
+				} else {
+					document.removeEventListener('scroll', scrolling, false);
+				}
 			}
 		}
 	};
@@ -155,6 +160,7 @@ const Pagination = ({
 	};
 
 	const getResultPage = (page: number = currentPage) => {
+		isLoadingServerScroll = true;
 		getFullJsonResults(page).then((responseServerJson) => {
 			if (responseServerJson.status === 1) {
 				newContent = responseServerJson.dataRawArr;
@@ -191,6 +197,7 @@ const Pagination = ({
 			} else {
 				console.log('COULD NOT GET DATA FROM THIS OBJECT OR THIS ENDPOINT');
 			}
+			isLoadingServerScroll = false;
 		});
 	};
 
