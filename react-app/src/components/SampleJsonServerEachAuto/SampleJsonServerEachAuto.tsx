@@ -17,7 +17,7 @@ const SampleJsonServerEachAuto = () => {
 				})}
 			</ul>
 			<PaginationJson
-				data="http://react-bhx-pagination/users.php"
+				data="https://www.bhxsites.com.br/playground/api/react-pagination/users.php"
 				scrollDomReference=".list-box-local"
 				setData={setPaginationCurrentData}
 				saveLocalJson={false}

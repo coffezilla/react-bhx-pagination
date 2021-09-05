@@ -17,7 +17,7 @@ const SampleJsonServerEach = () => {
 				})}
 			</ul>
 			<PaginationJson
-				data="http://react-bhx-pagination/users.php"
+				data="https://www.bhxsites.com.br/playground/api/react-pagination/users.php"
 				setData={setPaginationCurrentData}
 				saveLocalJson={false}
 				pathData="list"
