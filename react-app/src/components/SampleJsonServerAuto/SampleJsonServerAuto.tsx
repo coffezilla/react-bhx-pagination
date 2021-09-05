@@ -18,6 +18,7 @@ const SampleJsonServerAuto = () => {
 			</ul>
 			<PaginationJson
 				data="https://jsonplaceholder.typicode.com/todos"
+				scrollDomReference=".list-box-local"
 				setData={setPaginationCurrentData}
 				autoLoad
 				perPage={20}

@@ -20,6 +20,8 @@ interface IProps {
 	pathData?: string;
 	// callback function after successfully change the page
 	callbackChangePage?: Function;
+	// class or id of the element that will calculate scroll to the bottom
+	scrollDomReference?: string | null;
 }
 
 interface IRef {
@@ -47,6 +49,7 @@ const Pagination = ({
 	autoLoad = false,
 	saveLocalJson = true,
 	pathData = undefined,
+	scrollDomReference = null,
 }: IProps) => {
 	const refContentScroll: React.MutableRefObject<IRef> = useRef({
 		allContent: 0,
@@ -237,20 +240,23 @@ const Pagination = ({
 				}
 			}
 		};
-		const contentScrollBox: Element | null = document.querySelector('.list-box-local');
-		if (autoLoad && contentScrollBox !== null) {
-			if (contentScrollBox instanceof HTMLElement) {
-				// create an Observer instance
-				const resizeObserver = new ResizeObserver(() => {
-					refContentScroll.current = {
-						...refContentScroll.current,
-						allContent: contentScrollBox?.scrollHeight + contentScrollBox?.offsetTop,
-						viewport: window?.innerHeight,
-					};
-				});
-				// start observing a DOM node
-				resizeObserver.observe(document.body);
-				window.addEventListener('scroll', scrolling, false);
+		if (scrollDomReference != null) {
+			const contentScrollBox: Element | null = document.querySelector(scrollDomReference);
+
+			if (autoLoad && contentScrollBox !== null) {
+				if (contentScrollBox instanceof HTMLElement) {
+					// create an Observer instance
+					const resizeObserver = new ResizeObserver(() => {
+						refContentScroll.current = {
+							...refContentScroll.current,
+							allContent: contentScrollBox?.scrollHeight + contentScrollBox?.offsetTop,
+							viewport: window?.innerHeight,
+						};
+					});
+					// start observing a DOM node
+					resizeObserver.observe(document.body);
+					window.addEventListener('scroll', scrolling, false);
+				}
 			}
 		}
 

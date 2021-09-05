@@ -179,7 +179,13 @@ const SampleJsonLocalAuto = () => {
 					return <li key={result}>{result}</li>;
 				})}
 			</ul>
-			<PaginationJson data={jsonData} autoLoad setData={setPaginationCurrentData} perPage={30} />
+			<PaginationJson
+				scrollDomReference=".list-box-local"
+				data={jsonData}
+				autoLoad
+				setData={setPaginationCurrentData}
+				perPage={30}
+			/>
 		</>
 	);
 };
