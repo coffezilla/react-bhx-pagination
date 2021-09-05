@@ -124,7 +124,6 @@ $dbResults = array(
 
 // query
 $dataResponse["list"] = array_slice($dbResults, $indexInitSearch, $resultsPerPage);
-// $dataResponse = array_slice($dbResults, $indexInitSearch, $resultsPerPage);
 
 // total results available
 $dataResponse["totalRows"] = count($dbResults);
