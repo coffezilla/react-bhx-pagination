@@ -37,7 +37,7 @@ module.exports = {
 		'no-alert': 0,
 		'arrow-body-style': 0,
 		'import/no-extraneous-dependencies': [
-			'error',
+			'off',
 			{
 				devDependencies: false,
 				optionalDependencies: false,

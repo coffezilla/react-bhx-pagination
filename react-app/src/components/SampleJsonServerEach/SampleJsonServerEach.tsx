@@ -1,4 +1,3 @@
-/* eslint-disable */
 import { useState } from 'react';
 import PaginationJson from '../PaginationJson';
 
@@ -10,7 +9,7 @@ const SampleJsonServerEach = () => {
 	const [paginationCurrentData, setPaginationCurrentData] = useState<IData['data']>([]);
 	return (
 		<>
-			<h1>Sample Json Local</h1>
+			<h1>Sample Json Server Each</h1>
 			<h2>Result:</h2>
 			<ul className="list-box-local">
 				{paginationCurrentData.map((result: any) => {
@@ -21,7 +20,6 @@ const SampleJsonServerEach = () => {
 				data="http://react-bhx-pagination/users.php"
 				setData={setPaginationCurrentData}
 				saveLocalJson={false}
-				autoLoad
 				pathData="list"
 				perPage={20}
 			/>

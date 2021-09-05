@@ -5,24 +5,27 @@ interface IData {
 	data: string[];
 }
 
-const SampleJsonServer = () => {
+const SampleJsonServerEachAuto = () => {
 	const [paginationCurrentData, setPaginationCurrentData] = useState<IData['data']>([]);
 	return (
 		<>
-			<h1>Sample Json Server</h1>
+			<h1>Sample Json Server Each - AUTO LOAD</h1>
 			<h2>Result:</h2>
 			<ul className="list-box-local">
 				{paginationCurrentData.map((result: any) => {
-					return <li key={result.id}>{`${result.id} - ${result.title}`}</li>;
+					return <li key={result}>{result}</li>;
 				})}
 			</ul>
 			<PaginationJson
-				data="https://jsonplaceholder.typicode.com/todos"
+				data="http://react-bhx-pagination/users.php"
 				setData={setPaginationCurrentData}
+				saveLocalJson={false}
+				autoLoad
+				pathData="list"
 				perPage={20}
 			/>
 		</>
 	);
 };
 
-export default SampleJsonServer;
+export default SampleJsonServerEachAuto;

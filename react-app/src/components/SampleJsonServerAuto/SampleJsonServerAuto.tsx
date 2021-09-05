@@ -5,11 +5,11 @@ interface IData {
 	data: string[];
 }
 
-const SampleJsonServer = () => {
+const SampleJsonServerAuto = () => {
 	const [paginationCurrentData, setPaginationCurrentData] = useState<IData['data']>([]);
 	return (
 		<>
-			<h1>Sample Json Server</h1>
+			<h1>Sample Json Server - AUTO LOAD</h1>
 			<h2>Result:</h2>
 			<ul className="list-box-local">
 				{paginationCurrentData.map((result: any) => {
@@ -19,10 +19,11 @@ const SampleJsonServer = () => {
 			<PaginationJson
 				data="https://jsonplaceholder.typicode.com/todos"
 				setData={setPaginationCurrentData}
+				autoLoad
 				perPage={20}
 			/>
 		</>
 	);
 };
 
-export default SampleJsonServer;
+export default SampleJsonServerAuto;

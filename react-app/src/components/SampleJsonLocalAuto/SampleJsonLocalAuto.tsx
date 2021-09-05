@@ -5,7 +5,7 @@ interface IData {
 	data: string[];
 }
 
-const SampleJsonLocal = () => {
+const SampleJsonLocalAuto = () => {
 	const jsonData: IData['data'] = [
 		'1',
 		'2',
@@ -172,16 +172,16 @@ const SampleJsonLocal = () => {
 	const [paginationCurrentData, setPaginationCurrentData] = useState<IData['data']>([]);
 	return (
 		<>
-			<h1>Sample Json Local</h1>
+			<h1>Sample Json Local - AUTO LOAD</h1>
 			<h2>Result:</h2>
 			<ul className="list-box-local">
 				{paginationCurrentData.map((result: any) => {
 					return <li key={result}>{result}</li>;
 				})}
 			</ul>
-			<PaginationJson data={jsonData} setData={setPaginationCurrentData} perPage={30} />
+			<PaginationJson data={jsonData} autoLoad setData={setPaginationCurrentData} perPage={30} />
 		</>
 	);
 };
 
-export default SampleJsonLocal;
+export default SampleJsonLocalAuto;

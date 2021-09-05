@@ -1,16 +1,25 @@
-/* eslint-disable */
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+/* eslint-disable no-nested-ternary */
+/* eslint-disable  operator-linebreak */
+import React, { useEffect, useRef } from 'react';
 import axios from 'axios';
 
 interface IProps {
-	data: any[] | string; //local data. no need if is getting
-	setData: React.Dispatch<React.SetStateAction<string[]>>; // change the data in the app to show results
-	currentPage?: number; // current page
-	perPage?: number; // number of results per page
-	autoLoad?: boolean; // scroll to the bottom to load next page
-	saveLocalJson?: boolean; // get all the results with one call
-	pathData?: string; // field of the object ( data.pathData, data.users, data.xxx)
-	onChange?: Function; // callback function after successfully change the page
+	//  local data. no need if is getting
+	data: any[] | string;
+	// change the data in the app to show results
+	setData: React.Dispatch<React.SetStateAction<string[]>>;
+	// current page
+	currentPage?: number;
+	// number of results per page
+	perPage?: number;
+	// scroll to the bottom to load next page
+	autoLoad?: boolean;
+	// get all the results with one call
+	saveLocalJson?: boolean;
+	// field of the object ( data.pathData, data.users, data.xxx)
+	pathData?: string;
+	// callback function after successfully change the page
+	callbackChangePage?: Function;
 }
 
 interface IRef {
@@ -20,6 +29,7 @@ interface IRef {
 	viewport: number;
 	result: any[];
 	dataTemp: any[];
+	localData: any[];
 }
 
 type serverData = {
@@ -28,16 +38,12 @@ type serverData = {
 	totalResults: number;
 };
 
-const Rogue = () => {
-	console.log('yx');
-};
-
 const Pagination = ({
 	data,
 	setData,
 	currentPage = 1,
 	perPage = 10,
-	onChange,
+	callbackChangePage,
 	autoLoad = false,
 	saveLocalJson = true,
 	pathData = undefined,
@@ -49,11 +55,8 @@ const Pagination = ({
 		pages: [],
 		viewport: 0,
 		dataTemp: [],
+		localData: [],
 	});
-
-	// save local json for server call
-	const [localData, setLocalData] = useState<any[]>([]);
-	// const [isLoadingServerScroll, setIsLoadingServerScroll] = useState<boolean>(false);
 
 	// check if is a endpoint or object
 	let dataJson: any[] = [];
@@ -61,48 +64,29 @@ const Pagination = ({
 	let pagesList: any[] = [];
 	let totalResults: number = 0;
 	let isLoadingServerScroll = false;
+
 	const dataRetrieveFrom =
 		typeof data === 'object' ? 'LOCAL' : saveLocalJson ? 'SERVER_LOCAL' : 'SERVER';
 
-	const scrolling = useCallback(() => {
-		// only load more results if is not loading prev data
-		if (!isLoadingServerScroll) {
-			let windowCurrentPosition = 0;
-			if (window !== undefined) {
-				windowCurrentPosition = window.pageYOffset;
-			}
-			if (
-				refContentScroll.current.viewport + windowCurrentPosition >
-				refContentScroll.current.allContent
-			) {
-				const nextPage = refContentScroll.current.page + 1;
-				if (nextPage < refContentScroll.current.pages.length + 1) {
-					getResultPage(nextPage);
-					console.log('get result', nextPage);
-				} else {
-					console.log('removeEventListener');
-					document.removeEventListener('scroll', scrolling, false);
-					// document.removeEventListener('scroll', Rogue, false);
-				}
-			}
-		}
-	}, []);
-
 	// get data from local json
-	const getDataFromJson = (json: any[], page: number = 1, perPage: number = 3): any => {
+	const getDataFromJson = (json: any[], page: number = 1): any => {
 		dataJson = json;
-		setLocalData(dataJson);
 
-		const totalResults = dataJson.length;
+		refContentScroll.current = {
+			...refContentScroll.current,
+			localData: dataJson,
+		};
+
+		const totalResultsLength = dataJson.length;
 		const indexCurrent = page * perPage - perPage;
 		const indexCurrentFirst = indexCurrent;
 		const indexLastResult = indexCurrent + perPage;
-		const indexLast = indexLastResult > totalResults ? totalResults : indexLastResult;
+		const indexLast = indexLastResult > totalResultsLength ? totalResultsLength : indexLastResult;
 
 		const serverResponse = {
 			status: 1,
 			dataRawArr: dataJson.slice(indexCurrentFirst, indexLast),
-			totalResults: totalResults,
+			totalResults: totalResultsLength,
 		};
 		return serverResponse;
 	};
@@ -131,35 +115,36 @@ const Pagination = ({
 					};
 				})
 				.catch((errorData) => {
-					console.log('ENDPOINT NOT FOUND');
+					console.log('ENDPOINT NOT FOUND', errorData);
 				});
 		}
 
 		// gettin data from server only the first time
+		// after that, the json is treat like local json
 		if (dataRetrieveFrom === 'SERVER_LOCAL') {
-			if (localData.length === 0) {
+			if (refContentScroll.current.localData.length === 0) {
 				await axios({
 					url: `${data}`,
 					method: 'get',
 				})
 					.then((responseData) => {
 						dataJson = pathData ? responseData.data[pathData] : responseData.data;
-						serverResponse = getDataFromJson(dataJson, page, perPage);
+						serverResponse = getDataFromJson(dataJson, page);
 					})
 					.catch((errorData) => {
-						console.log('ENDPOINT NOT FOUND');
+						console.log('ENDPOINT NOT FOUND', errorData);
 					});
 			} else {
-				serverResponse = getDataFromJson(localData, page, perPage);
+				serverResponse = getDataFromJson(refContentScroll.current.localData, page);
 			}
 		}
 
-		// all data is paged from the passed json
+		// data is request from the local json passed
 		if (dataRetrieveFrom === 'LOCAL') {
 			if (typeof data === 'object') {
 				dataJson = data;
 			}
-			serverResponse = getDataFromJson(dataJson, page, perPage);
+			serverResponse = getDataFromJson(dataJson, page);
 		}
 
 		return serverResponse;
@@ -172,7 +157,7 @@ const Pagination = ({
 				newContent = responseServerJson.dataRawArr;
 				totalResults = responseServerJson.totalResults;
 
-				// creating pages array
+				// creating pages to front end
 				const totalPages = Math.ceil(totalResults / perPage);
 				pagesList = [];
 				for (let i = 1; i <= totalPages; i += 1) {
@@ -182,24 +167,26 @@ const Pagination = ({
 				if (autoLoad) {
 					refContentScroll.current = {
 						...refContentScroll.current,
-						page: page,
+						page,
 						result: [...refContentScroll.current.result, ...newContent],
 						pages: pagesList,
 					};
 				} else {
 					refContentScroll.current = {
 						...refContentScroll.current,
-						page: page,
+						page,
 						result: newContent,
 						pages: pagesList,
 					};
 				}
 
-				if (onChange) {
-					onChange(page);
-				}
-
+				// update useData from the main page
 				setData(refContentScroll.current.result);
+
+				// return callback function with current page
+				if (callbackChangePage) {
+					callbackChangePage(page);
+				}
 			} else {
 				console.log('COULD NOT GET DATA FROM THIS OBJECT OR THIS ENDPOINT');
 			}
@@ -207,15 +194,18 @@ const Pagination = ({
 		});
 	};
 
+	// click next page
 	const handleNewPage = (page: number): void => {
 		getResultPage(page);
 	};
 
+	// click prev page
 	const handlePrevPage = (): void => {
 		const pageGoesTo = refContentScroll.current.page === 1 ? 1 : refContentScroll.current.page - 1;
 		getResultPage(pageGoesTo);
 	};
 
+	// click number page
 	const handleNextPage = (): void => {
 		const pageGoesTo =
 			refContentScroll.current.page === refContentScroll.current.pages.length
@@ -225,6 +215,28 @@ const Pagination = ({
 	};
 
 	useEffect(() => {
+		const scrolling = () => {
+			// eventListener scrolling to get bottom of the page
+			// only load more results if is not loading something
+			// remove event if has got everything
+			if (!isLoadingServerScroll) {
+				let windowCurrentPosition = 0;
+				if (window !== undefined) {
+					windowCurrentPosition = window.pageYOffset;
+				}
+				if (
+					refContentScroll.current.viewport + windowCurrentPosition >
+					refContentScroll.current.allContent
+				) {
+					const nextPage = refContentScroll.current.page + 1;
+					if (nextPage < refContentScroll.current.pages.length + 1) {
+						getResultPage(nextPage);
+					} else {
+						window.removeEventListener('scroll', scrolling, false);
+					}
+				}
+			}
+		};
 		const contentScrollBox: Element | null = document.querySelector('.list-box-local');
 		if (autoLoad && contentScrollBox !== null) {
 			if (contentScrollBox instanceof HTMLElement) {
@@ -238,22 +250,19 @@ const Pagination = ({
 				});
 				// start observing a DOM node
 				resizeObserver.observe(document.body);
-				console.log('addEventListener');
-				document.addEventListener('scroll', scrolling, false);
-				// document.addEventListener('scroll', Rogue, false);
+				window.addEventListener('scroll', scrolling, false);
 			}
-		} else {
-			console.log('removeEventListener');
-			document.removeEventListener('scroll', scrolling, false);
-			// document.removeEventListener('scroll', Rogue, false);
 		}
 
 		getResultPage();
+		return () => {
+			window.removeEventListener('scroll', scrolling);
+		};
 	}, []);
 
 	return (
 		<>
-			<pre>{JSON.stringify(refContentScroll, null, 1)}</pre>
+			{/* <pre>{JSON.stringify(refContentScroll, null, 1)}</pre> */}
 			{/* <pre>{JSON.stringify(localData, null, 1)}</pre> */}
 			{autoLoad ? (
 				<>
