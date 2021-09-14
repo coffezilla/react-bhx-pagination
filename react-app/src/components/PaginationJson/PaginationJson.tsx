@@ -2,6 +2,9 @@
 /* eslint-disable  operator-linebreak */
 import React, { useEffect, useRef } from 'react';
 import axios from 'axios';
+import { install } from 'resize-observer';
+
+install();
 
 interface IProps {
 	//  local data. no need if is getting
