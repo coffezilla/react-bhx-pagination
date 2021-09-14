@@ -4,6 +4,9 @@ This component is very useful for those who needs to create pagination from json
 
 This repository contains a backend folder with a PHP file example.
 
+## Dependencies
+- Axios
+
 ## Feat
 
 - Typescript
