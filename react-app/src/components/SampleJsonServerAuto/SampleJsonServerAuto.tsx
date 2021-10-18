@@ -21,7 +21,7 @@ const SampleJsonServerAuto = () => {
 				scrollDomReference=".list-box-local"
 				setData={setPaginationCurrentData}
 				autoLoad
-				perPage={20}
+				perPage={30}
 			/>
 		</>
 	);

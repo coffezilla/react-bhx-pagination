@@ -17,13 +17,13 @@ const SampleJsonServerEachAuto = () => {
 				})}
 			</ul>
 			<PaginationJson
-				data="https://www.bhxsites.com.br/playground/api/react-pagination/users.php"
+				data="http://backend/users"
 				scrollDomReference=".list-box-local"
 				setData={setPaginationCurrentData}
 				saveLocalJson={false}
 				autoLoad
 				pathData="list"
-				perPage={20}
+				perPage={30}
 			/>
 		</>
 	);
